@@ -38,32 +38,32 @@ export default function Home() {
   const currentQ = quizQuestions[currentIndex];
 
   const handleAnswer = (opt: string) => {
-    if (currentQ.type === "multiple") {
-      setSelectedOptions((prev) =>
-        prev.includes(opt)
-          ? prev.filter((o) => o !== opt)
-          : [...prev, opt]
-      );
-    } else {
-      setSelectedOptions([opt]);
-    }
-  };
+  if (currentQ.type === "multiple") {
+    setSelectedOptions((prev) =>
+      prev.includes(opt)
+        ? prev.filter((o) => o !== opt)
+        : [...prev, opt]
+    );
+  } else {
+    setSelectedOptions([opt]);
+  }
+};
 
-  const handleSubmit = () => {
-    const correct = [...currentQ.answer].sort().join(",");
-    const selected = [...selectedOptions].sort().join(",");
+ const handleSubmit = () => {
+  const correct = [...currentQ.answer].sort().join(",");
+  const selected = [...selectedOptions].sort().join(",");
 
-    if (correct === selected) {
-      setScore((prev) => prev + 1);
-    }
+  if (correct === selected) {
+    setScore((prev) => prev + 1);
+  }
 
-    if (currentIndex + 1 < quizQuestions.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setSelectedOptions([]);
-    } else {
-      setQuizFinished(true);
-    }
-  };
+  if (currentIndex + 1 < quizQuestions.length) {
+    setCurrentIndex((prev) => prev + 1);
+    setSelectedOptions([]);
+  } else {
+    setQuizFinished(true);
+  }
+};
 
   const resetQuiz = () => {
     setQuizStarted(false);
