@@ -1,146 +1,173 @@
 "use client";
-type WeekType = keyof typeof questions | "all";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { questions } from "./data/questions";
+
+type Question = {
+  question: string;
+  options: string[];
+  answer: string[];
+  type: "single" | "multiple";
+};
+
+type WeekType = keyof typeof questions | "all";
 
 export default function Home() {
   const [selectedWeek, setSelectedWeek] = useState<WeekType>("week1");
   const [quizStarted, setQuizStarted] = useState(false);
-  const [shuffle, setShuffle] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(300);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+  const [score, setScore] = useState(0);
+  const [shuffle, setShuffle] = useState(false);
 
-  const getQuestions = () => {
-  if (selectedWeek === "all") {
-    return Object.values(questions).flat();
-  }
+  const getQuestions = (): Question[] => {
+    let qs =
+      selectedWeek === "all"
+        ? Object.values(questions).flat()
+        : questions[selectedWeek];
 
-  return questions[selectedWeek as keyof typeof questions];
-};
+    if (shuffle) {
+      qs = [...qs].sort(() => Math.random() - 0.5);
+    }
+
+    return qs as Question[];
+  };
 
   const quizQuestions = getQuestions();
   const currentQ = quizQuestions[currentIndex];
 
-  useEffect(() => {
-    if (!quizStarted || quizFinished) return;
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setQuizFinished(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [quizStarted, quizFinished]);
-
   const handleAnswer = (opt: string) => {
-    setSelectedOption(opt);
-    if (opt === currentQ.answer) {
-      setScore((prev) => prev + 1);
+    if (currentQ.type === "multiple") {
+      setSelectedOptions((prev) =>
+        prev.includes(opt)
+          ? prev.filter((o) => o !== opt)
+          : [...prev, opt]
+      );
+    } else {
+      setSelectedOptions([opt]);
     }
   };
 
-  const nextQuestion = () => {
+  const handleSubmit = () => {
+    const correct = [...currentQ.answer].sort().join(",");
+    const selected = [...selectedOptions].sort().join(",");
+
+    if (correct === selected) {
+      setScore((prev) => prev + 1);
+    }
+
     if (currentIndex + 1 < quizQuestions.length) {
       setCurrentIndex((prev) => prev + 1);
-      setSelectedOption(null);
+      setSelectedOptions([]);
     } else {
       setQuizFinished(true);
     }
   };
 
-  const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  const resetQuiz = () => {
+    setQuizStarted(false);
+    setQuizFinished(false);
+    setCurrentIndex(0);
+    setSelectedOptions([]);
+    setScore(0);
   };
+
+  if (!quizStarted) {
+    return (
+      <div className="p-6 max-w-xl mx-auto">
+        <h1 className="text-2xl font-bold mb-4">Quiz App</h1>
+
+        <select
+          className="border p-2 mb-4 w-full"
+          onChange={(e) =>
+            setSelectedWeek(e.target.value as WeekType)
+          }
+        >
+          <option value="week1">Week 1</option>
+          <option value="week2">Week 2</option>
+          <option value="week3">Week 3</option>
+          <option value="week4">Week 4</option>
+          <option value="week5">Week 5</option>
+          <option value="week6">Week 6</option>
+          <option value="week7">Week 7</option>
+          <option value="week8">Week 8</option>
+          <option value="week9">Week 9</option>
+          <option value="week10">Week 10</option>
+          <option value="week11">Week 11</option>
+          <option value="week12">Week 12</option>
+          <option value="all">All Weeks</option>
+        </select>
+
+        <label className="block mb-4">
+          <input
+            type="checkbox"
+            onChange={() => setShuffle(!shuffle)}
+          />{" "}
+          Shuffle Questions
+        </label>
+
+        <button
+          className="bg-blue-500 text-white px-4 py-2"
+          onClick={() => setQuizStarted(true)}
+        >
+          Start Quiz
+        </button>
+      </div>
+    );
+  }
+
+  if (quizFinished) {
+    return (
+      <div className="p-6 text-center">
+        <h2 className="text-xl font-bold">Quiz Finished</h2>
+        <p className="mt-2">
+          Score: {score} / {quizQuestions.length}
+        </p>
+
+        <button
+          className="mt-4 bg-green-500 text-white px-4 py-2"
+          onClick={resetQuiz}
+        >
+          Restart
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-xl mx-auto">
-      {!quizStarted ? (
-        <>
-          <h1 className="text-2xl font-bold mb-4">Practice Quiz</h1>
+      <h2 className="text-lg font-semibold mb-4">
+        Q{currentIndex + 1}. {currentQ.question}
+      </h2>
 
-          <select
-            className="border p-2 mb-4 w-full"
-            onChange={(e) => setSelectedWeek(e.target.value as WeekType)}
-          >
-            <option value="week1">Week 1</option>
-            <option value="week2">Week 2</option>
-            <option value="all">All Weeks</option>
-          </select>
-
-          <label className="flex gap-2 mb-4">
-            <input
-              type="checkbox"
-              onChange={(e) => setShuffle(e.target.checked)}
-            />
-            Shuffle Questions
-          </label>
-
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
-            onClick={() => setQuizStarted(true)}
-          >
-            Start Quiz
-          </button>
-        </>
-      ) : quizFinished ? (
-        <>
-          <h2 className="text-xl font-bold mb-4">Quiz Finished 🎉</h2>
-          <p>Score: {score} / {quizQuestions.length}</p>
-          <p>Time Left: {formatTime(timeLeft)}</p>
-          <button
-            className="mt-4 bg-green-500 text-white px-4 py-2 rounded"
-            onClick={() => window.location.reload()}
-          >
-            Restart
-          </button>
-        </>
-      ) : (
-        <>
-          <div className="flex justify-between mb-4">
-            <span>
-              Q{currentIndex + 1}/{quizQuestions.length}
-            </span>
-            <span>⏱️ {formatTime(timeLeft)}</span>
-          </div>
-
-          <h2 className="mb-4">{currentQ.question}</h2>
-
-          {currentQ.options.map((opt: string, i: number) => (
-            <button
-              key={i}
-              onClick={() => handleAnswer(opt)}
-              className={`block w-full border p-2 mb-2 ${
-                selectedOption === opt
-                  ? opt === currentQ.answer
-                    ? "bg-green-300"
-                    : "bg-red-300"
-                  : ""
-              }`}
-            >
-              {opt}
-            </button>
-          ))}
-
-          <button
-            onClick={nextQuestion}
-            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-          >
-            Next
-          </button>
-        </>
+      {currentQ.type === "multiple" && (
+        <p className="text-sm text-gray-500 mb-2">
+          Select multiple options
+        </p>
       )}
+
+      {currentQ.options.map((opt, i) => (
+        <button
+          key={i}
+          onClick={() => handleAnswer(opt)}
+          className={`block w-full border p-2 mb-2 text-left ${
+            selectedOptions.includes(opt)
+              ? "bg-blue-200"
+              : ""
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+
+      <button
+        className="mt-4 bg-purple-500 text-white px-4 py-2"
+        onClick={handleSubmit}
+        disabled={selectedOptions.length === 0}
+      >
+        Submit
+      </button>
     </div>
   );
 }
